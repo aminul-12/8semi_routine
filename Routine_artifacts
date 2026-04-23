@@ -1,0 +1,388 @@
+import { useState } from "react";
+
+const allCourses = [
+  { sl: 1,  code: "CSE 4101", title: "Computer Networks",                        type: "theory",   status: "scheduled" },
+  { sl: 2,  code: "CSE 4121", title: "Computer Networks: Sessional",              type: "sessional",status: "scheduled" },
+  { sl: 3,  code: "CSE 4102", title: "Computer Vision & Image Processing",        type: "theory",   status: "scheduled" },
+  { sl: 4,  code: "CSE 4122", title: "CV & Image Processing: Sessional",          type: "sessional",status: "scheduled" },
+  { sl: 5,  code: "CSE 4103", title: "Microprocessors & Microcontrollers",        type: "theory",   status: "scheduled" },
+  { sl: 6,  code: "CSE 4123", title: "Microprocessors: Sessional",                type: "sessional",status: "scheduled" },
+  { sl: 7,  code: "CSE 4224", title: "Placement / Practicum / Internship",        type: "special",  status: "confirm"   },
+  { sl: 8,  code: "CSE 4225", title: "Thesis / Project",                          type: "special",  status: "confirm"   },
+  { sl: 9,  code: "CSE 3203", title: "Computer Graphics",                         type: "theory",   status: "scheduled" },
+  { sl: 10, code: "CSE 3223", title: "Computer Graphics: Sessional",              type: "sessional",status: "scheduled" },
+  { sl: 11, code: "CSE 2203", title: "Simulation and Modeling",                   type: "theory",   status: "scheduled" },
+];
+
+const schedule = [
+  {
+    day: "Thursday",
+    short: "THU",
+    color: "#14b8a6",
+    source: "Evening Routine",
+    classes: [
+      { period:"1st", time:"10:00 – 11:30 AM", code:"CSE 3223", title:"Computer Graphics: Sessional", teacher:"RIH", room:"305", src:"EVE" },
+    ],
+  },
+  {
+    day: "Sunday",
+    short: "SUN",
+    color: "#f59e0b",
+    source: "Day Routine",
+    classes: [
+      { period:"3rd", time:"12:00 – 1:30 PM",  code:"CSE 4102", title:"Computer Vision & Image Processing",  teacher:"AAA", room:"304", src:"DAY" },
+      { period:"3rd", time:"12:00 – 1:30 PM",  code:"CSE 2203", title:"Simulation and Modeling",             teacher:"AR",  room:"304", src:"MIG" },
+      { period:"4th", time:"2:00 – 3:30 PM",   code:"CSE 4123", title:"Microprocessors: Sessional",          teacher:"AR",  room:"305", src:"DAY" },
+    ],
+  },
+  {
+    day: "Monday",
+    short: "MON",
+    color: "#10b981",
+    source: "Day Routine",
+    note: "Migrated — attend with 3/1 or 3/2 batch",
+    classes: [
+      { period:"3rd", time:"12:00 – 1:30 PM",  code:"CSE 2203", title:"Simulation and Modeling",             teacher:"AR",  room:"304", src:"MIG" },
+    ],
+  },
+  {
+    day: "Tuesday",
+    short: "TUE",
+    color: "#3b82f6",
+    source: "Day Routine",
+    classes: [
+      { period:"2nd", time:"10:30 – 12:00 PM", code:"CSE 4121", title:"Computer Networks: Sessional",        teacher:"MSA", room:"305", src:"DAY" },
+      { period:"3rd", time:"12:00 – 1:30 PM",  code:"CSE 4122", title:"CV & Image Processing: Sessional",   teacher:"AAA", room:"305", src:"DAY" },
+    ],
+  },
+  {
+    day: "Friday",
+    short: "FRI",
+    color: "#a855f7",
+    source: "Day + Evening",
+    note: "Friday special timing: 10:00 AM – 5:00 PM",
+    classes: [
+      { period:"1st–2nd", time:"10:00 AM – 1:00 PM", code:"CSE 3203", title:"Computer Graphics",              teacher:"RIH", room:"304", src:"EVE" },
+      { period:"1st–2nd", time:"10:00 AM – 1:00 PM", code:"CSE 4101", title:"Computer Networks",              teacher:"MSA", room:"305", src:"DAY" },
+      { period:"3rd–4th", time:"2:00 – 5:00 PM",     code:"CSE 4103", title:"Microprocessors & Microcontrollers", teacher:"AR", room:"305", src:"DAY" },
+    ],
+  },
+];
+
+const teachers = {
+  AAA: { name: "Md. Abdul Awal Ansary", color: "#f59e0b", phone: "01710445033" },
+  AR:  { name: "Abdullah Rajib",        color: "#3b82f6", phone: "01675937860" },
+  MSA: { name: "MD. Samiul Alim",       color: "#10b981", phone: "01730298445" },
+  RIH: { name: "Rasa Iffat Helmi",      color: "#14b8a6", phone: "01989823193" },
+};
+
+const srcBadge = {
+  DAY: { bg: "#1e3a5f", text: "#93c5fd", label: "Day" },
+  EVE: { bg: "#1a1033", text: "#c4b5fd", label: "Evening" },
+  MIG: { bg: "#1c1a06", text: "#fde68a", label: "Migrated" },
+};
+
+const typeColor = {
+  theory:   { border: "#3b82f6", badge: "#1d4ed8", bg: "#0f1e33" },
+  sessional:{ border: "#22c55e", badge: "#15803d", bg: "#0a1f12" },
+  special:  { border: "#a855f7", badge: "#7e22ce", bg: "#160d26" },
+};
+
+export default function Routine() {
+  const [tab, setTab] = useState("schedule");
+  const [expandDay, setExpandDay] = useState(null);
+
+  const totalScheduled = allCourses.filter(c => c.status === "scheduled").length;
+  const totalConfirm   = allCourses.filter(c => c.status === "confirm").length;
+
+  return (
+    <div style={{ minHeight:"100vh", background:"#07090f", fontFamily:"'Segoe UI',sans-serif", color:"#e2e8f0", padding:"20px 14px" }}>
+
+      {/* ── HEADER ── */}
+      <div style={{ textAlign:"center", marginBottom:"24px" }}>
+        <div style={{ fontSize:"9px", letterSpacing:"4px", color:"#334155", marginBottom:"6px" }}>
+          RTM AL-KABIR TECHNICAL UNIVERSITY · DEPT. OF CSE
+        </div>
+        <h1 style={{ margin:"0 0 4px", fontSize:"22px", fontWeight:"800", color:"#f1f5f9", letterSpacing:"-0.5px" }}>
+          My Class Routine
+        </h1>
+        <div style={{ fontSize:"11px", color:"#475569" }}>
+          Year 4 · Semester 2 · 4/2 Batch · HSC Program · Spring 2026
+        </div>
+
+        {/* Stats Row */}
+        <div style={{ display:"flex", justifyContent:"center", gap:"8px", marginTop:"12px", flexWrap:"wrap" }}>
+          {[
+            ["5", "Class Days", "#a855f7"],
+            ["10", "Scheduled", "#22c55e"],
+            ["9", "Courses Found", "#3b82f6"],
+            ["2", "Confirm Dept.", "#ef4444"],
+          ].map(([val, label, color]) => (
+            <div key={label} style={{
+              background:"#0f172a", border:`1px solid ${color}33`,
+              borderRadius:"8px", padding:"6px 14px", textAlign:"center",
+            }}>
+              <div style={{ fontSize:"18px", fontWeight:"800", color }}>{val}</div>
+              <div style={{ fontSize:"9px", color:"#475569", letterSpacing:"1px" }}>{label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── TABS ── */}
+      <div style={{ display:"flex", justifyContent:"center", gap:"6px", marginBottom:"20px" }}>
+        {[["schedule","📅 Schedule"],["courses","📚 Courses"],["teachers","👨‍🏫 Teachers"]].map(([key,label]) => (
+          <button key={key} onClick={() => setTab(key)} style={{
+            padding:"7px 16px", borderRadius:"8px", border:"none", cursor:"pointer",
+            fontSize:"12px", fontWeight:"600", fontFamily:"'Segoe UI',sans-serif",
+            background: tab===key ? "#1d4ed8" : "#111827",
+            color: tab===key ? "#fff" : "#475569",
+            boxShadow: tab===key ? "0 0 10px #1d4ed855" : "none",
+            transition:"all 0.2s",
+          }}>{label}</button>
+        ))}
+      </div>
+
+      {/* ── SCHEDULE TAB ── */}
+      {tab === "schedule" && (
+        <div style={{ maxWidth:"660px", margin:"0 auto" }}>
+
+          {/* Source Legend */}
+          <div style={{ display:"flex", gap:"8px", marginBottom:"16px", justifyContent:"center", flexWrap:"wrap" }}>
+            {Object.entries(srcBadge).map(([key, val]) => (
+              <div key={key} style={{
+                padding:"3px 10px", borderRadius:"12px",
+                background: val.bg, color: val.text,
+                fontSize:"10px", fontWeight:"700", border:`1px solid ${val.text}33`,
+              }}>{val.label} Routine</div>
+            ))}
+          </div>
+
+          {schedule.map(({ day, short, color, source, note, classes }) => (
+            <div key={day} style={{ marginBottom:"16px" }}>
+
+              {/* Day Header */}
+              <div
+                onClick={() => setExpandDay(expandDay === day ? null : day)}
+                style={{
+                  display:"flex", alignItems:"center", gap:"10px",
+                  padding:"10px 14px", borderRadius:"10px",
+                  background: color+"15", border:`1px solid ${color}44`,
+                  cursor:"pointer", marginBottom:"8px",
+                }}
+              >
+                <div style={{
+                  width:"36px", height:"36px", borderRadius:"8px",
+                  background: color+"22", border:`1px solid ${color}44`,
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  fontSize:"10px", fontWeight:"800", color, letterSpacing:"0.5px",
+                }}>{short}</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:"14px", fontWeight:"700", color }}>{day}</div>
+                  {note && <div style={{ fontSize:"9px", color:"#475569", marginTop:"1px" }}>{note}</div>}
+                </div>
+                <div style={{ fontSize:"11px", color:"#334155" }}>
+                  {classes.length} class{classes.length > 1 ? "es" : ""}
+                </div>
+                <div style={{ color:"#334155", fontSize:"12px" }}>{expandDay === day ? "▲" : "▼"}</div>
+              </div>
+
+              {/* Class Cards */}
+              {expandDay !== day && classes.map((cls, i) => {
+                const tc = typeColor[allCourses.find(c => c.code === cls.code)?.type || "theory"];
+                const sb = srcBadge[cls.src];
+                const tr = teachers[cls.teacher];
+                return (
+                  <div key={i} style={{
+                    display:"flex", marginBottom:"6px", borderRadius:"10px",
+                    overflow:"hidden", border:`1px solid ${tc.border}33`,
+                    background: tc.bg,
+                  }}>
+                    {/* Left accent */}
+                    <div style={{ width:"4px", background: color, flexShrink:0 }} />
+
+                    {/* Period */}
+                    <div style={{
+                      minWidth:"76px", padding:"12px 8px", textAlign:"center",
+                      background: color+"12", borderRight:`1px solid ${color}22`,
+                      display:"flex", flexDirection:"column", justifyContent:"center",
+                    }}>
+                      <div style={{ fontSize:"10px", fontWeight:"800", color }}>{cls.period}</div>
+                      <div style={{ fontSize:"8px", color:"#475569", marginTop:"3px", lineHeight:"1.5" }}>
+                        {cls.time.replace(" – ", "\n– ")}
+                      </div>
+                    </div>
+
+                    {/* Course */}
+                    <div style={{ flex:1, padding:"10px 12px" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"4px" }}>
+                        <span style={{
+                          fontSize:"10px", fontWeight:"700", padding:"2px 7px",
+                          borderRadius:"4px", background: tc.badge, color:"#fff",
+                        }}>{cls.code}</span>
+                        <span style={{
+                          fontSize:"9px", padding:"2px 7px", borderRadius:"4px",
+                          background: sb.bg, color: sb.text, border:`1px solid ${sb.text}22`,
+                        }}>{sb.label}</span>
+                      </div>
+                      <div style={{ fontSize:"12px", fontWeight:"600", color:"#f1f5f9", lineHeight:"1.3" }}>
+                        {cls.title}
+                      </div>
+                    </div>
+
+                    {/* Teacher + Room */}
+                    <div style={{
+                      padding:"10px 12px", textAlign:"right",
+                      display:"flex", flexDirection:"column",
+                      justifyContent:"center", minWidth:"70px",
+                    }}>
+                      <div style={{ fontSize:"16px", fontWeight:"900", color: tr?.color || "#94a3b8" }}>
+                        {cls.teacher}
+                      </div>
+                      <div style={{
+                        fontSize:"10px", marginTop:"4px", padding:"2px 6px",
+                        background:"#0f172a", borderRadius:"4px", color:"#475569",
+                      }}>Rm {cls.room}</div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Collapsed state */}
+              {expandDay === day && (
+                <div style={{
+                  padding:"10px 14px", background:"#0f172a",
+                  borderRadius:"8px", border:"1px solid #1e293b",
+                  fontSize:"11px", color:"#475569",
+                }}>
+                  {classes.map(c => `${c.period} · ${c.code} · ${c.teacher}`).join("  |  ")}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Unconfirmed */}
+          <div style={{
+            marginTop:"8px", background:"#130a0a",
+            border:"1px solid #7f1d1d44", borderRadius:"10px", padding:"12px 14px",
+          }}>
+            <div style={{ fontSize:"10px", color:"#ef4444", fontWeight:"700", marginBottom:"8px", letterSpacing:"1px" }}>
+              ⚠️ CONFIRM WITH DEPARTMENT
+            </div>
+            {allCourses.filter(c => c.status === "confirm").map((c, i, arr) => (
+              <div key={c.code} style={{
+                display:"flex", gap:"10px", alignItems:"center", padding:"5px 0",
+                borderBottom: i < arr.length-1 ? "1px solid #1e293b" : "none",
+              }}>
+                <span style={{ fontSize:"10px", fontWeight:"700", color:"#7f1d1d", minWidth:"76px" }}>{c.code}</span>
+                <span style={{ fontSize:"11px", color:"#64748b" }}>{c.title}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── COURSES TAB ── */}
+      {tab === "courses" && (
+        <div style={{ maxWidth:"660px", margin:"0 auto" }}>
+          <div style={{ fontSize:"9px", color:"#334155", letterSpacing:"3px", marginBottom:"12px" }}>
+            ALL 11 OFFERED COURSES — YEAR 4 SEMESTER 2
+          </div>
+          {allCourses.map((c) => {
+            const tc = typeColor[c.type];
+            return (
+              <div key={c.code} style={{
+                display:"flex", alignItems:"center", gap:"12px",
+                padding:"10px 14px", marginBottom:"5px",
+                background: tc.bg, borderRadius:"8px",
+                border:`1px solid ${tc.border}22`,
+                borderLeft:`3px solid ${c.status === "scheduled" ? tc.border : "#7f1d1d"}`,
+              }}>
+                <div style={{
+                  width:"20px", height:"20px", borderRadius:"50%",
+                  background:"#0f172a", display:"flex", alignItems:"center",
+                  justifyContent:"center", fontSize:"9px", color:"#334155", flexShrink:0,
+                }}>{c.sl}</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:"11px", fontWeight:"700", color: tc.border }}>{c.code}</div>
+                  <div style={{ fontSize:"11px", color:"#94a3b8", marginTop:"1px" }}>{c.title}</div>
+                </div>
+                <div>
+                  {c.status === "scheduled" ? (
+                    <span style={{
+                      fontSize:"9px", padding:"3px 8px", borderRadius:"10px",
+                      background:"#052e16", color:"#22c55e", border:"1px solid #15803d44",
+                    }}>✓ Found</span>
+                  ) : (
+                    <span style={{
+                      fontSize:"9px", padding:"3px 8px", borderRadius:"10px",
+                      background:"#1c0a0a", color:"#ef4444", border:"1px solid #7f1d1d44",
+                    }}>? Confirm</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Legend */}
+          <div style={{ display:"flex", gap:"14px", marginTop:"14px", justifyContent:"center" }}>
+            {[["Theory","theory"],["Sessional","sessional"],["Special","special"]].map(([label,type]) => (
+              <div key={type} style={{ display:"flex", alignItems:"center", gap:"5px" }}>
+                <div style={{ width:"8px", height:"8px", borderRadius:"2px", background: typeColor[type].border }} />
+                <span style={{ fontSize:"10px", color:"#475569" }}>{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── TEACHERS TAB ── */}
+      {tab === "teachers" && (
+        <div style={{ maxWidth:"660px", margin:"0 auto" }}>
+          <div style={{ fontSize:"9px", color:"#334155", letterSpacing:"3px", marginBottom:"12px" }}>
+            YOUR COURSE TEACHERS
+          </div>
+          {Object.entries(teachers).map(([code, t]) => {
+            const myCourses = schedule.flatMap(d => d.classes).filter(c => c.teacher === code);
+            const uniqueCodes = [...new Set(myCourses.map(c => c.code))];
+            return (
+              <div key={code} style={{
+                padding:"14px 16px", marginBottom:"8px",
+                background:"#0f172a", borderRadius:"10px",
+                border:`1px solid ${t.color}33`,
+                borderLeft:`3px solid ${t.color}`,
+              }}>
+                <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"10px" }}>
+                  <div style={{
+                    width:"40px", height:"40px", borderRadius:"10px",
+                    background: t.color+"22", border:`1px solid ${t.color}44`,
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    fontSize:"14px", fontWeight:"900", color: t.color,
+                  }}>{code}</div>
+                  <div>
+                    <div style={{ fontSize:"13px", fontWeight:"700", color:"#f1f5f9" }}>{t.name}</div>
+                    <div style={{ fontSize:"10px", color:"#475569", marginTop:"2px" }}>📞 {t.phone}</div>
+                  </div>
+                </div>
+                <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
+                  {uniqueCodes.map(c => (
+                    <span key={c} style={{
+                      fontSize:"10px", padding:"3px 8px", borderRadius:"6px",
+                      background: t.color+"15", color: t.color,
+                      border:`1px solid ${t.color}33`, fontWeight:"600",
+                    }}>{c}</span>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div style={{ textAlign:"center", marginTop:"24px", fontSize:"9px", color:"#1e293b" }}>
+        Updated: 15.03.2026 · Effective: 12.01.2026 · Head: MD. Abdul Awal Ansary
+      </div>
+    </div>
+  );
+}
+
